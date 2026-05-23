@@ -1,0 +1,138 @@
+# =============================================================================
+# DAMEC — default configuration
+# -----------------------------------------------------------------------------
+# Copy this file to configs/local.yaml and replace every <YOUR_*> placeholder
+# with an absolute path on your machine.
+# =============================================================================
+
+# --- Dataset ---
+dataset:
+  dir: "<YOUR_DATASET_ROOT>"                      # e.g. /data/mimic-cxr-jpg/2.1.0
+  train_json: "<YOUR_DATASET_ROOT>/train.json"    # see INSTALL.md §4 for schema
+  val_json:   "<YOUR_DATASET_ROOT>/val.json"
+  test_json:  "<YOUR_DATASET_ROOT>/test.json"
+  image_root: "<YOUR_DATASET_ROOT>/files"
+
+# --- Precomputed per-image expert outputs (recommended, see scripts/precompute_experts.py) ---
+precomputed:
+  use_precomputed: true
+  dir: "<YOUR_CACHE_ROOT>"
+  priorrg:
+    train: "<YOUR_CACHE_ROOT>/train_priorrg.json"
+    val:   "<YOUR_CACHE_ROOT>/val_priorrg.json"
+    test:  "<YOUR_CACHE_ROOT>/test_priorrg.json"
+  medgemma:
+    train: "<YOUR_CACHE_ROOT>/train_medgemma.json"
+    val:   "<YOUR_CACHE_ROOT>/val_medgemma.json"
+    test:  "<YOUR_CACHE_ROOT>/test_medgemma.json"
+
+# --- 14-class CheXpert label ordering (do not change) ---
+chexpert_labels:
+  - "Enlarged Cardiomediastinum"
+  - "Cardiomegaly"
+  - "Lung Opacity"
+  - "Lung Lesion"
+  - "Edema"
+  - "Consolidation"
+  - "Pneumonia"
+  - "Atelectasis"
+  - "Pneumothorax"
+  - "Pleural Effusion"
+  - "Pleural Other"
+  - "Fracture"
+  - "Support Devices"
+  - "No Finding"
+num_diseases: 14
+
+view_types: ["PA", "AP", "LATERAL"]
+view_dim: 3
+
+# --- Consensus module (paper §3.3.3) -----------------------------------------
+# Trained by training/train_consensus.py. The checkpoint encodes the per-disease
+# embeddings, expert calibrations, Transformer encoder, PMA pooling, and the
+# per-disease temperature.
+consensus:
+  checkpoint: "<YOUR_CONSENSUS_CKPT>"             # e.g. outputs/consensus/best.pth
+  classifier_tags: ["rad_dino", "convnext"]       # discriminative experts cached on disk
+  hidden_dim: 64
+
+# --- CF descriptor thresholds (paper §3.4 Eq. 10) ----------------------------
+scf:
+  pos_threshold: 0.55       # τ_+  state_d = POS if p_d ≥ τ_+
+  neg_threshold: 0.45       # τ_-  state_d = NEG if p_d ≤ τ_-  (else UNC)
+  delta_margin: 0.15        # |Δp| below this = "stable" longitudinal change
+
+# --- Discriminative expert evidence files (precomputed) ----------------------
+# Each tag maps to a JSON file containing per-image disease logits/probs.
+classifier_evidence:
+  rad_dino:
+    train: "<YOUR_CACHE_ROOT>/train_rad_dino.json"
+    val:   "<YOUR_CACHE_ROOT>/val_rad_dino.json"
+    test:  "<YOUR_CACHE_ROOT>/test_rad_dino.json"
+  convnext:
+    train: "<YOUR_CACHE_ROOT>/train_convnext.json"
+    val:   "<YOUR_CACHE_ROOT>/val_convnext.json"
+    test:  "<YOUR_CACHE_ROOT>/test_convnext.json"
+
+# --- CheXbert (validator & training-label extractor) -------------------------
+chexbert:
+  checkpoint: "<YOUR_CHEXBERT_CKPT>"              # e.g. /weights/chexbert.pth
+  src_path:   "<YOUR_CHEXBERT_SRC>"               # Stanford CheXbert repo `src/` (contains models/bert_labeler.py)
+  bert_path:  "<YOUR_HF_CACHE>/models--google-bert--bert-base-uncased/<revision>"
+
+# --- MedGemma (attribute elicitor + generative expert) ------------------------
+medgemma:
+  api_base: "http://localhost:8001/v1"
+  model_name: "medgemma-1.5-4b-it"
+  max_retries: 3
+  timeout: 120.0
+
+# --- Discriminative-expert checkpoints (used only by scripts/precompute_experts.py) ----
+experts:
+  convnext:
+    checkpoint: "<YOUR_CONVNEXT_CKPT>"             # e.g. /weights/convnext_base_320_mixup.pt
+    image_size: 320
+  rad_dino:
+    encoder_path: "<YOUR_HF_CACHE>/models--microsoft--rad-dino/<revision>"
+    head_ckpt:    "<YOUR_RADDINO_HEAD_CKPT>"        # linear head over the 768-d CLS token
+
+# --- PriorRG (task-specific generative expert; provides base draft) ----------
+priorrg:
+  weight: "<YOUR_PRIORRG_DIR>/checkpoints/best_model.ckpt"
+  pretrain_weight: "<YOUR_PRIORRG_DIR>/checkpoints/pretraining_best.ckpt"
+  annotation: "<YOUR_PRIORRG_DIR>/priorrg_annotation.json"
+  view_dict:  "<YOUR_PRIORRG_DIR>/view-positions-dict.json"
+  code_dir:   "<YOUR_PRIORRG_DIR>/code"
+  ckpt_zoo_dir: "<YOUR_PRIORRG_DIR>"               # parent dir holding the PriorRG ckpt_zoo
+  rad_dino_path: "<YOUR_HF_CACHE>/models--microsoft--rad-dino/<revision>"
+  cxr_bert_path: "<YOUR_HF_CACHE>/models--microsoft--BiomedVLP-CXR-BERT-specialized/<revision>"
+  distilgpt2_path: "<YOUR_HF_CACHE>/models--distilbert--distilgpt2/<revision>"
+
+# --- Writer LLM (paper main = Gemma-4-31B-it, paper §3.5.1) ------------------
+llm:
+  writer:
+    api_base: "http://localhost:8006/v1"
+    model_name: "gemma-4-31b"
+    temperature: 0.2
+    max_tokens: 2048
+
+# --- Clinical-context retrieval (paper §3.5.1) -------------------------------
+template_library:
+  path: "<YOUR_OUTPUT_DIR>/templates/templates_K20_R9.json"
+  pos_weight: 2.0                  # ω_d = 2 for POS diseases (Eq. 11)
+  top_k: 9                         # M = 9 representative reports per cluster
+
+# --- Clinical-context validation (paper §3.5.2) ------------------------------
+validator:
+  enabled: true
+  max_retries: 2                   # writer re-invocations when CF ⊄ predicted POS
+
+# --- Output / parallelism ----------------------------------------------------
+output:
+  dir: "outputs"
+  filename: "results_test_seed43.json"
+  save_every_n: 5
+
+study_concurrency: 4
+
+seed: 43
