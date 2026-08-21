@@ -1,14 +1,3 @@
-"""
-DAMEC — LLM dispatcher.
-
-Paper main uses a single OpenAI-compatible vLLM endpoint for both LLM call sites:
-
-  - `purpose="writer"`   → the frozen Gemma-4-31B-it writer (paper §3.5.1)
-  - `purpose="observer"` → MedGemma 1.5-4b-it served on a separate vLLM endpoint
-                            (used by the MedGemma generative expert and by the
-                             Attribute-Finding Module of paper §3.4)
-"""
-
 from typing import Any, Dict
 
 from langchain_openai import ChatOpenAI
