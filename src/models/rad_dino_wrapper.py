@@ -1,14 +1,3 @@
-"""
-DAMEC — RAD-DINO encoder + linear-head wrapper (paper Tab. 2 — discriminative · foundation).
-
-RAD-DINO (Pérez-García et al., 2025) is a self-supervised CXR foundation
-encoder. We attach a linear head trained on the target dataset's training
-split to produce per-disease probabilities.
-
-This wrapper is used only by the offline precompute pass; the consensus module
-loads the cached JSON output at inference time.
-"""
-
 import os
 from typing import Any, Dict, Optional
 
