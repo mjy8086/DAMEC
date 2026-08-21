@@ -1,31 +1,3 @@
-"""
-Precompute per-image outputs for the four frozen experts and write one JSON
-per split. The inference pipeline consumes these caches via
-`precomputed.use_precomputed: true` in the config.
-
-This script runs the experts serially over the manifest. For large datasets,
-shard the manifest and run several copies in parallel on different GPUs.
-
-Outputs (one JSON list per split, each item keyed by `image_id`):
-    <cache_dir>/<split>_priorrg.json    # image_id + study_id + task_id + view + report_text + chexbert_labels
-    <cache_dir>/<split>_medgemma.json   # image_id + report_text + chexbert_labels
-    <cache_dir>/<split>_rad_dino.json   # image_id + per-disease probs
-    <cache_dir>/<split>_convnext.json   # image_id + per-disease probs
-    <cache_dir>/<split>_gt_labels.json  # image_id + 14-class CheXbert vector of the reference report
-                                          (consumed by training/dataset.py)
-
-The PriorRG cache carries `study_id` / `task_id` / `view` so that
-`training/dataset.py` can group images by study without re-reading the
-manifest. `gt_labels.json` is built by running CheXbert on each study's
-reference report and broadcasting the 14-class vector to every image in that
-study; the supervision target of paper Eq. 12.
-
-Usage
------
-    python scripts/precompute_experts.py --split test --config configs/local.yaml \
-        --experts priorrg medgemma rad_dino convnext gt_labels
-"""
-
 import argparse
 import json
 import os
@@ -35,7 +7,7 @@ from typing import Any, Dict, List
 from tqdm import tqdm
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.utils.io import load_config, load_split, get_image_path   # noqa: E402
+from src.utils.io import load_config, load_split, get_image_path
 
 
 def _save(records: List[Dict[str, Any]], path: str):
@@ -70,12 +42,6 @@ def precompute_priorrg(items, cfg, image_root):
 
 
 def precompute_medgemma(items, cfg, image_root):
-    """MedGemma generative-expert evidence (paper §3.3.1, Tab. 2).
-
-    Paper main: MedGemma is asked to produce a free-form report for the
-    image; that report is then labeled by CheXbert into 14-class buckets,
-    which the consensus module consumes as the MedGemma expert token.
-    """
     import base64
     from openai import OpenAI
     from src.models.chexbert_wrapper import get_chexbert_wrapper
@@ -126,12 +92,6 @@ def precompute_medgemma(items, cfg, image_root):
 
 
 def precompute_gt_labels(items, cfg, image_root):
-    """Run CheXbert on each study's reference findings report and broadcast the
-    resulting 14-class binary vector to every image in that study.
-
-    This produces the per-image `gt_binary` field used by
-    `training/dataset.py` to form the supervision target (paper Eq. 12).
-    """
     from src.models.chexbert_wrapper import get_chexbert_wrapper, CHEXPERT_LABELS
     chexbert = get_chexbert_wrapper(cfg)
     out = []
