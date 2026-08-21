@@ -1,20 +1,3 @@
-"""
-DAMEC — Writer node (paper §3.5.1).
-
-A frozen instruction-tuned LLM generates the final Findings paragraph from
-three inputs:
-
-  1. The CF descriptor (state["scf_current"]).
-  2. The top-M retrieved cluster reports (state["selected_templates"]).
-  3. A base draft produced by the reference RRG model (per-image RRG_output
-     stored on the dataset manifest — PriorRG for MIMIC-CXR; MLRG for
-     MIMIC-ABN / Two-view CXR; MambaXray-VL for CheXpert Plus).
-
-When the validator (paper §3.5.2) flags that one or more CF-POS diseases are
-absent from the previous draft, the writer is re-invoked with an instruction
-listing them.
-"""
-
 from typing import Any, Dict, List, Tuple
 
 from langchain_core.messages import SystemMessage, HumanMessage
