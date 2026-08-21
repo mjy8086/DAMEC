@@ -1,20 +1,3 @@
-"""
-DAMEC — Train the disease-aware consensus module (paper §3.3.3, §3.6).
-
-The frozen experts (ConvNeXt, RAD-DINO, PriorRG, MedGemma) and CheXbert are
-**not** trained here; we only train the consensus module's calibration,
-embeddings, token projection, Transformer encoder, PMA pooling, and the
-per-disease head with temperature/bias (paper §3.6).
-
-Loss: per-disease binary cross-entropy against the study-level GT label
-(`y_d ∈ {0, 1}`, paper Eq. 12).
-
-Usage
------
-    cd training
-    python train_consensus.py --config configs/consensus_default.yaml
-"""
-
 import argparse
 import json
 import os
@@ -33,10 +16,10 @@ from torch.utils.data import DataLoader
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _REPO_ROOT)
 
-from src.models.consensus_module import ConsensusModule                       # noqa: E402
-from training.config import CHEXPERT_LABELS, NUM_DISEASES                     # noqa: E402
-from training.dataset import StudyDataset, study_collate, StratifiedBatchSampler  # noqa: E402
-from training.consensus_base import warm_start_consensus                       # noqa: E402
+from src.models.consensus_module import ConsensusModule
+from training.config import CHEXPERT_LABELS, NUM_DISEASES
+from training.dataset import StudyDataset, study_collate, StratifiedBatchSampler
+from training.consensus_base import warm_start_consensus
 
 
 def set_seed(seed: int):
@@ -187,8 +170,6 @@ def main():
         ep_loss, n_batches = 0.0, 0
         t0 = time.time()
         for batch in train_loader:
-            # Permutation augmentation (paper §3.3.3 — Transformer encoder is set-invariant by design,
-            # but the explicit shuffle stabilizes convergence in our experiments).
             if cfg.get("permutation_aug", True):
                 B = batch["image_mask"].shape[0]
                 N = batch["image_mask"].shape[1]
@@ -243,7 +224,6 @@ def main():
             "val": val_metrics, "f1_all": f1_all,
         })
 
-        # Best by overall F1.
         if f1_all > best_f1:
             best_f1 = f1_all
             best_metrics = val_metrics
