@@ -1,17 +1,3 @@
-"""
-DAMEC — Clinical Findings (CF) descriptor helpers.
-
-The CF descriptor (paper §3.4) is a dict
-    {"conditions": {disease: {p, logit, H, state, provenance, attn, ...}, ...}}
-
-This module provides:
-  - probability/logit/entropy conversions
-  - state assignment (POS / NEG / UNC) using symmetric thresholds (Eq. 10)
-  - CF initialization from the consensus module's case-level output
-  - longitudinal change δ_d (new / resolved / stable / worsened / improved)
-  - text serialization for the LLM writer prompt
-"""
-
 import math
 from typing import Any, Dict, List, Optional
 
@@ -19,8 +5,6 @@ from typing import Any, Dict, List, Optional
 LOGIT_EPS = 1e-6
 EXPERT_TAGS = ("priorrg", "medgemma", "rad_dino", "convnext")
 
-
-# --- logit / probability / entropy conversions ------------------------------
 
 def prob_to_logit(prob: Optional[float]) -> float:
     if prob is None:
@@ -42,7 +26,6 @@ def binary_entropy_norm(logit: float) -> float:
     return h / math.log(2)
 
 
-# --- state assignment (paper Eq. 10) ----------------------------------------
 
 def assign_label(p: float, pos_thr: float = 0.55, neg_thr: float = 0.45) -> str:
     """state_d = POS if p ≥ τ_+ ; NEG if p ≤ τ_− ; else UNC.
@@ -56,7 +39,6 @@ def assign_label(p: float, pos_thr: float = 0.55, neg_thr: float = 0.45) -> str:
     return "UNC"
 
 
-# --- CF initialization from the consensus module ----------------------------
 
 def init_scf_from_integrator(
     integrated: Dict[str, Any],
@@ -84,7 +66,6 @@ def init_scf_from_integrator(
     return {"conditions": conditions, "source": "consensus_module"}
 
 
-# --- longitudinal change δ_d (paper §3.4) -----------------------------------
 
 def compute_delta(
     scf_current: Dict[str, Any],
@@ -129,7 +110,7 @@ def compute_delta(
     return {"conditions": delta}
 
 
-# --- text serialization for the writer prompt -------------------------------
+
 
 def scf_to_text(scf: Dict[str, Any]) -> str:
     """Render the CF dict as three explicit POS / UNC / NEG sections so the
