@@ -10,3 +10,6 @@ nltk
 pycocoevalcap
 Pillow
 requests
+torchvision
+langchain-openai
+langchain-core
