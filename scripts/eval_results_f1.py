@@ -1,14 +1,3 @@
-"""
-Clinical-Efficacy (CE) metrics.
-
-
-Usage
------
-    python scripts/eval_results_f1.py \
-        --results outputs/results_test_seed43.json \
-        --config  configs/local.yaml
-"""
-
 import argparse
 import json
 import os
@@ -20,12 +9,11 @@ from sklearn.metrics import precision_recall_fscore_support
 from tqdm import tqdm
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.utils.io import load_config                  # noqa: E402
-from src.models.chexbert_wrapper import get_chexbert_wrapper, CHEXPERT_LABELS   # noqa: E402
+from src.utils.io import load_config
+from src.models.chexbert_wrapper import get_chexbert_wrapper, CHEXPERT_LABELS
 
 
 def _chexbert_pos_vector(report: str, chexbert) -> np.ndarray:
-    """Return a 14-d binary vector: 1 iff CheXbert labels the disease 'Positive'."""
     if not report or not report.strip():
         return np.zeros(len(CHEXPERT_LABELS), dtype=np.int32)
     labels = chexbert.label(report)
