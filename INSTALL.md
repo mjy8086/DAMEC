@@ -21,7 +21,7 @@ trained by DAMEC; we download the published checkpoints and freeze them.
 
 | Component | Source | Notes |
 |---|---|---|
-| **ConvNeXt-Base** | Hugging Face `facebook/convnext-base-224-22k-1k` | Finetuned on CheXpert-14 at 320×320 with MixUp. Training script in `training/experts/train_convnext.py` (not included in this anonymous release; use any public CheXpert-trained ConvNeXt). |
+| **ConvNeXt-Base** | Hugging Face `facebook/convnext-base-224-22k-1k` | Finetuned on CheXpert-14 at 320×320 with MixUp. Training script in `training/experts/train_convnext.py`. |
 | **RAD-DINO** | Hugging Face `microsoft/rad-dino` | Add a linear head over the 768-d CLS token; train the head only on the target dataset's training split. |
 | **PriorRG** | Authors' release (Liu et al., AAAI 2026, `priorrg_mimic_cxr_annotation.json`) | Use the released `best_model.ckpt`. |
 | **MedGemma 1.5-4b-it** | Hugging Face `google/medgemma-1.5-4b-it` | Served via vLLM (see §3). |
