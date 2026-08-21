@@ -1,13 +1,3 @@
-"""
-DAMEC — Pipeline runner: initializes wrappers, builds the graph, and runs it
-in parallel over a dataset split.
-
-`init_wrappers` loads the four frozen experts and the trained consensus
-module exactly once and reuses them across all cases. Inference proceeds in
-parallel via `ThreadPoolExecutor(max_workers=study_concurrency)`; the four
-experts are wrapped to be thread-safe (CheXbert holds a module-level lock).
-"""
-
 import json
 import os
 import time
@@ -34,14 +24,12 @@ def init_wrappers(cfg: Dict[str, Any], prompts: Dict[str, Any], split: str) -> D
 
     wrappers: Dict[str, Any] = {}
 
-    # ----- Trained consensus module (paper §3.3.3) -----
     cons_cfg = cfg["consensus"]
     wrappers["consensus"] = ConsensusModuleWrapper(
         ckpt_path=cons_cfg["checkpoint"],
         classifier_tags=list(cons_cfg["classifier_tags"]),
     )
 
-    # ----- Discriminative experts: precomputed per-image probabilities -----
     cls_cfg = cfg.get("classifier_evidence", {})
     classifier_evidence: Dict[str, Dict[str, Any]] = {}
     for tag in cons_cfg["classifier_tags"]:
@@ -58,7 +46,6 @@ def init_wrappers(cfg: Dict[str, Any], prompts: Dict[str, Any], split: str) -> D
             print(f"[runner] WARN: cache missing for discriminative expert '{tag}'")
     wrappers["classifier_evidence"] = classifier_evidence
 
-    # ----- Generative experts -----
     wrappers["priorrg"] = PriorRGWrapper(cfg, precomputed=precomputed.get("priorrg", {}))
     wrappers["medgemma"] = MedGemmaWrapper(cfg, prompts, precomputed=precomputed.get("medgemma", {}))
 
