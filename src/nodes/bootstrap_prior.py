@@ -1,14 +1,3 @@
-"""
-DAMEC — Bootstrap-Prior node.
-
-Extracts the prior CF descriptor from the latest prior study's report via
-CheXbert, so that downstream code can compute the longitudinal change δ_d
-(paper §3.4).
-
-If no prior is available, emits an empty CF_prior; subsequent δ_d entries will
-be labelled "no_prior" / "indeterminate".
-"""
-
 from typing import Any, Dict
 
 from src.models.chexbert_wrapper import get_chexbert_wrapper
