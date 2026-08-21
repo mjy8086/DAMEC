@@ -14,7 +14,7 @@ The resulting structured **Clinical Findings (CF) descriptor** serves as an expl
 ## Overall Framework
 
 <p align="center">
-  <img src="assets/damec_overall_framework.png" width="100%">
+  <img src="/Overall_framework.png" width="100%">
 </p>
 
 <p align="center">
