@@ -1,23 +1,3 @@
-"""
-DAMEC — Study-Processor node (paper §3.3).
-
-Runs the four heterogeneous experts on every image in the current study and
-hands the per-image outputs to the trained consensus module, which produces a
-case-level CF descriptor.
-
-The four experts are categorized along (discriminative vs generative) ×
-(task-specific vs foundation). See paper Tab. 2:
-
-                  | task-specific | foundation
-    discriminative| ConvNeXt      | RAD-DINO
-    generative    | PriorRG       | MedGemma
-
-Discriminative experts come in via precomputed per-image JSON caches
-(see `scripts/precompute_experts.py`). Generative experts run through their
-respective wrappers; their text outputs are converted to 14-class CheXbert
-buckets and fed to the consensus module as one-hot tokens.
-"""
-
 from typing import Any, Dict, List
 
 from src.utils.scf import init_scf_from_integrator, compute_delta
