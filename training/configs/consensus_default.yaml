@@ -1,18 +1,7 @@
-# =============================================================================
-# DAMEC — consensus-module training config.
-#
-# The default values reproduce paper §4.3 (`L = 2` SAB blocks, H = 64, n_heads = 4,
-# stratified sampling over N=1/N=2/N≥3 buckets with permutation augmentation).
-# Adjust paths to match your environment.
-# =============================================================================
-
-# Per-image cache directory (output of scripts/precompute_experts.py)
 precompute_dir: "<YOUR_CACHE_ROOT>"
 
-# Ordered list of discriminative-expert tags whose JSONs live in <precompute_dir>.
 classifier_tags: ["rad_dino", "convnext"]
 
-# Optional training-set subset filter (manifest JSON keyed by study_id).
 train_split: "train"
 val_split:   "val"
 study_subset: null
@@ -20,17 +9,14 @@ study_subset: null
 min_images: 1
 max_images: 6
 
-# Stratified subset sampling (paper §4.3 — exposes the model to N=1/2/3+ studies).
 subset_size_mode:  "stratified_random"
 subset_size_ratio: [0.30, 0.30, 0.40]
 
-# Per-batch (N=1 / N=2 / N≥3) ratio enforced by StratifiedBatchSampler.
 batch_size:         32
 stratified_ratio:   [0.20, 0.50, 0.30]
 permutation_aug:    true
 evidence_dropout:   0.15
 
-# Optimizer / schedule
 lr:                  5.0e-4
 weight_decay:        1.0e-2
 grad_clip:           1.0
@@ -39,7 +25,6 @@ early_stop_patience: 15
 cosine_schedule:     true
 pos_weight_power:    0.6
 
-# Architecture (consensus module, paper §3.3.3)
 num_diseases:        14
 view_dim:            3
 hidden_dim:          64
@@ -49,12 +34,9 @@ n_sab_blocks:        2
 n_heads:             4
 attn_dropout:        0.1
 
-# Optional warm-start from a single-image base calibrator (paper §3.3.2).
-# Set to null to train the consensus module from scratch.
 base_b_ckpt:         null
 finetune_calibration: true
 
-# Output
 output_dir: "outputs/consensus"
 variant_tag: "main"
 seed: 42
