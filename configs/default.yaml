@@ -83,7 +83,7 @@ chexbert:
 # --- MedGemma (attribute elicitor + generative expert) ------------------------
 medgemma:
   api_base: "http://localhost:8001/v1"
-  model_name: "medgemma-1.5-4b-it"
+  model_name: "google/medgemma-1.5-4b-it"
   max_retries: 3
   timeout: 120.0
 
@@ -112,7 +112,7 @@ priorrg:
 llm:
   writer:
     api_base: "http://localhost:8006/v1"
-    model_name: "gemma-4-31b"
+    model_name: "google/gemma-4-31B-it"
     temperature: 0.2
     max_tokens: 2048
 
