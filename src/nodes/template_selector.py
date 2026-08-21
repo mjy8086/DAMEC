@@ -1,17 +1,3 @@
-"""
-DAMEC — Clinical-Context Retrieval node (paper §3.5.1).
-
-Selects the closest cluster from the offline-built cluster template library by
-positive-weighted Euclidean distance between the predicted CF probability
-vector and each cluster's disease-prevalence centroid (paper Eq. 11):
-
-    dist(p, μ_k) = sqrt( Σ_d ω_d · (p_d − μ_k,d)^2 )
-
-with ω_d = 2 for diseases predicted as POS and ω_d = 1 otherwise. The
-nearest cluster's M = top_k representative reports are returned and fed
-to the writer in paper §3.5.1.
-"""
-
 import json
 import os
 from typing import Any, Dict, Optional
