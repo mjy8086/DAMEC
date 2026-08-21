@@ -1,12 +1,3 @@
-"""
-DAMEC — Clinical-Context Validation node (paper §3.5.2).
-
-Runs CheXbert on the draft report, extracts its positive disease set P̂, and
-compares it against the CF positive set P^CF. If P^CF ⊆ P̂ the draft is
-accepted; otherwise the writer is re-invoked with an instruction listing the
-missing diseases P^CF \\ P̂.
-"""
-
 from typing import Any, Dict, List
 
 from src.models.chexbert_wrapper import get_chexbert_wrapper
