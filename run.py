@@ -1,15 +1,3 @@
-"""
-DAMEC — entry point for full-pipeline inference.
-
-Examples
---------
-    # Smoke test on a single sample
-    python run.py --split test --max_samples 1
-
-    # Full test run with a specific config + seed
-    python run.py --split test --config configs/local.yaml --seed 43
-"""
-
 import argparse
 import os
 import random
