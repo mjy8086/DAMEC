@@ -46,21 +46,6 @@ To enable the warm-start, set `base_b_ckpt` in the training config to the
 single-image checkpoint. Leave it `null` to train the consensus module from
 scratch.
 
-## Reproducing paper §4.6.1 (expert-combination scaling)
-
-```bash
-# Singleton experts (the four diagonal entries in paper Tab. 6)
-for tag in convnext rad_dino priorrg medgemma; do
-    python train_consensus.py --config configs/consensus_default.yaml \
-        --override "classifier_tags=[\"$tag\"]" \
-        --override "variant_tag=single_$tag"
-done
-
-# Pairs, triples, quad — see paper Tab. 6
-python train_consensus.py --config configs/consensus_default.yaml \
-    --override 'classifier_tags=["priorrg","medgemma","rad_dino","convnext"]' \
-    --override 'variant_tag=full_quad'
-```
 
 ## Dataset assumptions
 
