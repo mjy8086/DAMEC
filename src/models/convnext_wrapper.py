@@ -1,18 +1,3 @@
-"""
-DAMEC — ConvNeXt classifier wrapper (paper Tab. 2 — discriminative · task-specific).
-
-A CheXpert-supervised ConvNeXt-Base classifier (trained at 320×320 with MixUp)
-that outputs a per-disease probability vector over the 14 CheXbert categories.
-
-In the reference pipeline this wrapper is used only for the offline
-`scripts/precompute_experts.py` pass. At inference time, the consensus module
-consumes the per-image cached JSON; no live wrapper is required.
-
-The implementation expects a state dict over `torchvision`'s `convnext_base`
-backbone followed by a linear head with `num_diseases = 14` outputs.
-Override `_build_model` to plug in a different classifier checkpoint format.
-"""
-
 import os
 from typing import Any, Dict, List, Optional
 
