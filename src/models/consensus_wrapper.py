@@ -1,20 +1,3 @@
-"""
-DAMEC — Inference wrapper for the trained consensus module (paper §3.3).
-
-Loads a saved checkpoint, builds the input tensors from the per-image evidence
-bundles emitted by `nodes/study_processor.py`, and returns the case-level CF
-prediction in the dict shape that `utils.scf.init_scf_from_integrator`
-consumes:
-
-    {
-        "s_img": {disease: float},     # case-level logit s_d
-        "p_img": {disease: float},     # case-level probability p_d
-        "u_img": {disease: float},     # entropy of p_d
-        "attn":  {disease: {expert: weight}},
-        "view":  list[str],
-    }
-"""
-
 from __future__ import annotations
 
 import math
