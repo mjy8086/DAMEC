@@ -1,21 +1,3 @@
-"""
-DAMEC — Study-level dataset for consensus-module training.
-
-Reads the per-image caches produced by `scripts/precompute_experts.py`,
-groups images by `study_id`, and emits per-study tensors:
-
-    chexbert_onehot : (N, D, 4)   — PriorRG CheXbert bucket one-hot
-    medgemma_onehot : (N, D, 4)   — MedGemma  CheXbert bucket one-hot
-    view_onehot     : (N, 3)
-    s_x_stack       : (N, K, D)   — discriminative-expert logits
-    gt_binary       : (D,)        — study-level 14-class GT
-
-`study_collate` pads the N axis to `N_max` per batch and produces an
-`image_mask` (1 for real images, 0 for padding). `StratifiedBatchSampler`
-draws fixed fractions of N=1 / N=2 / N≥3 studies per batch so the model is
-exposed to all study sizes evenly.
-"""
-
 from __future__ import annotations
 
 import json
@@ -58,21 +40,6 @@ def _index_by_image_id(obj):
 
 
 class StudyDataset(Dataset):
-    """Aggregates per-image expert outputs into per-study tensors.
-
-    Args:
-        precompute_dir:   directory holding `<split>_priorrg.json`,
-                          `<split>_medgemma.json`, `<split>_gt_labels.json`,
-                          and `<split>_<tag>.json` for every discriminative tag.
-        split:            "train" / "val" / "test"
-        classifier_tags:  ordered list of discriminative-expert tags
-        study_subset_path: optional manifest restricting which studies to load.
-        evidence_dropout: probability of zero-masking one discriminative source
-                          per image (training augmentation only).
-        subset_size_mode: "all" or "stratified_random"
-        subset_size_ratio: sampling weights over (N=1, N=2, N≥3) buckets;
-                          only used when subset_size_mode == "stratified_random".
-    """
 
     def __init__(
         self,
@@ -112,9 +79,6 @@ class StudyDataset(Dataset):
         self.gt = gt
         self.classifier_maps = classifier_maps
 
-        # ---- group images by study_id ----
-        # We rely on every per-image cache including `study_id` and `view` keys.
-        # PriorRG cache is the canonical source for these fields.
         allowed: Optional[set] = None
         if study_subset_path is not None:
             sub = _load_json(study_subset_path)
@@ -188,12 +152,6 @@ class StudyDataset(Dataset):
         return chex, mg, v, sx
 
     def _sample_subset_indices(self, N_total: int) -> List[int]:
-        """Choose how many images of the study to use this iteration.
-
-        Stratified mode samples a target size from the (1, 2, ≥3) buckets and
-        then samples that many images uniformly without replacement, giving the
-        model exposure to different study sizes across epochs.
-        """
         if self.subset_size_mode == "all" or N_total == 1:
             return list(range(N_total))
         if self.subset_size_mode == "stratified_random":
@@ -292,11 +250,6 @@ def study_collate(batch: List[Dict]) -> Dict[str, torch.Tensor]:
 
 
 class StratifiedBatchSampler(Sampler[List[int]]):
-    """Sample batches with fixed N=1 / N=2 / N≥3 fractions.
-
-    Empty buckets fall back to oversampling other buckets so that batches stay
-    at the configured size.
-    """
 
     def __init__(self, dataset: StudyDataset, batch_size: int, ratio: Sequence[float], seed: int = 42):
         self.dataset = dataset
