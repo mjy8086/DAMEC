@@ -8,19 +8,6 @@ import torch.nn.functional as F
 
 
 class ConsensusModule(nn.Module):
-    """Disease-aware consensus module.
-
-    Args:
-        num_classifiers: number of discriminative experts (K).
-                          Total tokens per (image, disease) = S = 2 + K
-                          (2 generative + K discriminative).
-        num_diseases:    D (14 for CheXpert-14).
-        view_dim:        3 (PA / AP / LATERAL).
-        hidden_dim:      H, Transformer hidden size (Eq. 5).
-        disease_embed_dim, tool_embed_dim: dimensions of e_dis, e_exp.
-        n_sab_blocks:    L, Transformer encoder depth.
-        n_heads:         attention heads.
-    """
 
     def __init__(
         self,
