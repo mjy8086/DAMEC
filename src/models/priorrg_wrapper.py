@@ -1,16 +1,3 @@
-"""
-DAMEC — PriorRG wrapper (paper Tab. 2 — generative · task-specific).
-
-Two responsibilities:
-  1. Provide the per-image "base draft" report that the LLM writer edits
-     (paper §3.5.1).
-  2. Provide the CheXbert-labeled disease vector that the consensus module
-     consumes as the PriorRG expert token (paper §3.3.2).
-
-Live inference requires PriorRG's official codebase (Liu et al., AAAI 2026)
-plus its released checkpoints — see INSTALL.md §2 for the expected layout.
-"""
-
 import os
 import sys
 from typing import Any, Dict, Optional
