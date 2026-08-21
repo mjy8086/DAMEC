@@ -1,30 +1,3 @@
-"""
-DAMEC — Disease-Aware Consensus Module (paper §3.3.3).
-
-Architecture (mirrors paper Eq. 5–8):
-
-  Token construction (Eq. 5):
-      x_{n,s,d} = [ ℓ_{n,s,d} ; u_{n,s,d} ; v_n ; e_exp_s ; e_dis_d ]
-  Token projection (2-layer MLP) → hidden_dim.
-
-  Transformer encoder (L pre-norm blocks):
-      Z^(l+1) = TransformerLayer(Z^(l))
-
-  Per-disease PMA pooling (Eq. 7) with learnable disease query q_d:
-      c_d = PMA(q_d, W_K Z_d^(L), W_V Z_d^(L))
-
-  Case-level head with per-disease temperature T_d, B_d (Eq. 8):
-      s_d = T_d · Head(c_d) + B_d ;  p_d = σ(s_d)
-
-Inputs: per-image one-hot for generative experts (PriorRG, MedGemma) +
-per-image scalar logits for discriminative experts (ConvNeXt, RAD-DINO),
-plus a view one-hot and a per-image padding mask.
-
-The expert output calibration of Eq. 3 (w_{s,d}, b_{s,d}) is implemented as
-the per-(expert × disease) affine parameters W_r, W_m, W_x, b_r, b_m, b_x
-below.
-"""
-
 from __future__ import annotations
 
 import math
@@ -70,25 +43,21 @@ class ConsensusModule(nn.Module):
         self.n_heads = n_heads
         self.head_dim = hidden_dim // n_heads
 
-        # ---- Expert output calibration (Eq. 3) ----
         self.W_r = nn.Parameter(torch.randn(num_diseases, 4) * 0.1)   # PriorRG (one-hot over CheXbert buckets)
         self.b_r = nn.Parameter(torch.zeros(num_diseases))
         self.W_m = nn.Parameter(torch.randn(num_diseases, 4) * 0.1)   # MedGemma (one-hot over CheXbert buckets)
         self.b_m = nn.Parameter(torch.zeros(num_diseases))
         self.W_x = nn.Parameter(torch.ones(num_classifiers, num_diseases))     # discriminative scalar logits
         self.b_x = nn.Parameter(torch.zeros(num_classifiers, num_diseases))
-
-        # ---- Per-disease temperature/bias (Eq. 8) ----
+      
         self.T = nn.Parameter(torch.ones(num_diseases))
         self.B = nn.Parameter(torch.zeros(num_diseases))
 
-        # ---- Embeddings ----
         self.disease_emb = nn.Embedding(num_diseases, disease_embed_dim)
         self.tool_emb = nn.Embedding(self.S, tool_embed_dim)
         nn.init.normal_(self.disease_emb.weight, std=0.02)
         nn.init.normal_(self.tool_emb.weight, std=0.02)
 
-        # ---- Token projection (2-layer MLP) ----
         token_in_dim = 1 + 1 + view_dim + tool_embed_dim + disease_embed_dim   # ℓ + u + view + e_exp + e_dis
         self.token_proj = nn.Sequential(
             nn.Linear(token_in_dim, hidden_dim),
@@ -96,7 +65,6 @@ class ConsensusModule(nn.Module):
             nn.Linear(hidden_dim, hidden_dim),
         )
 
-        # ---- Pre-norm Transformer encoder (L blocks) ----
         self.sab_blocks = nn.ModuleList([
             nn.TransformerEncoderLayer(
                 d_model=hidden_dim,
@@ -109,14 +77,12 @@ class ConsensusModule(nn.Module):
             for _ in range(n_sab_blocks)
         ])
 
-        # ---- Per-disease PMA (Eq. 7) ----
         self.disease_query = nn.Parameter(torch.randn(num_diseases, hidden_dim) * 0.02)
         self.pma_q_proj = nn.Linear(hidden_dim, hidden_dim)
         self.pma_k_proj = nn.Linear(hidden_dim, hidden_dim)
         self.pma_v_proj = nn.Linear(hidden_dim, hidden_dim)
         self.pma_dropout = nn.Dropout(attn_dropout)
 
-        # ---- Per-disease head ----
         self.disease_head = nn.Sequential(
             nn.LayerNorm(hidden_dim),
             nn.Linear(hidden_dim, hidden_dim),
@@ -152,7 +118,6 @@ class ConsensusModule(nn.Module):
         S = self.S
         H = self.H
 
-        # Eq. 3 calibration → calibrated logits ℓ_{n,s,d}
         s_r = (chexbert_onehot * self.W_r.unsqueeze(0).unsqueeze(0)).sum(-1) + self.b_r       # (B, N, D)
         s_m = (medgemma_onehot * self.W_m.unsqueeze(0).unsqueeze(0)).sum(-1) + self.b_m       # (B, N, D)
         s_x_cal = (
@@ -166,7 +131,6 @@ class ConsensusModule(nn.Module):
         ], dim=-1)                                    # (B, N, D, S)
         all_u = self._h_norm(all_logits)              # uncertainty u_{n,s,d}, Eq. 4
 
-        # Eq. 5 token construction
         tool_emb = self.tool_emb(self.tool_idx)                       # (S, te)
         disease_emb = self.disease_emb(self.disease_idx)              # (D, de)
         tool_emb_b = tool_emb.view(1, 1, 1, S, -1).expand(B, N, D, S, -1)
@@ -179,14 +143,12 @@ class ConsensusModule(nn.Module):
         ], dim=-1)                                                    # (B, N, D, S, F)
         tokens = self.token_proj(feat)                                # (B, N, D, S, H)
 
-        # Eq. 6 Transformer encoder over the full set of N·D·S tokens
         tokens_set = tokens.reshape(B, N * D * S, H)
         token_valid = image_mask.unsqueeze(-1).unsqueeze(-1).expand(B, N, D, S).reshape(B, N * D * S)
         pad_mask = (token_valid == 0)
         for blk in self.sab_blocks:
             tokens_set = blk(tokens_set, src_key_padding_mask=pad_mask)
 
-        # Eq. 7 per-disease PMA pooling
         tokens_back = tokens_set.view(B, N, D, S, H)
         tokens_per_d = tokens_back.permute(0, 2, 1, 3, 4).reshape(B, D, N * S, H)
         valid_per_d = (
@@ -211,7 +173,6 @@ class ConsensusModule(nn.Module):
 
         ctx = (attn @ V_).transpose(2, 3).contiguous().view(B, D, 1, H).squeeze(2)          # (B, D, H)
 
-        # Eq. 8 per-disease head
         s_img_raw = self.disease_head(ctx).squeeze(-1)                                       # (B, D)
         s_img = self.T * s_img_raw + self.B
         p_img = torch.sigmoid(s_img)
