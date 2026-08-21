@@ -1,10 +1,3 @@
-"""
-DAMEC — CheXbert wrapper.
-
-Used both as a labeler (during training-target extraction and base-draft labeling
-inside `priorrg_wrapper`) and as the Clinical-Context Validator (paper §3.5.2).
-"""
-
 import logging
 import os
 import sys
