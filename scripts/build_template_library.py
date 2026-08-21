@@ -1,25 +1,3 @@
-"""
-Offline cluster template library (paper §3.5.1).
-
-Encodes the *training* reports with BiomedBERT, runs K-means (default K=20),
-and for each cluster stores:
-  - `representative_reports`: M reports closest to the centroid (M = `--top_r`)
-  - `template_report`        : the closest one (compatibility key)
-  - `scf_profile`            : per-disease CheXbert prevalence over cluster members
-  - `top_diseases`           : the 5 most prevalent diseases (for diagnostics)
-
-The inference-time selector (`src/nodes/template_selector.py`) picks the closest
-cluster by positive-weighted Euclidean distance against the predicted CF
-probabilities (Eq. 11) and feeds the M representative reports to the writer.
-
-Usage
------
-    python scripts/build_template_library.py \
-        --train_json <path to train manifest> \
-        --K 20 --top_r 9 \
-        --out outputs/templates/templates_K20_R9.json
-"""
-
 import argparse
 import json
 import os
@@ -29,10 +7,9 @@ from typing import List, Tuple
 import numpy as np
 import torch
 
-# Make `src/` importable when running this script from the repo root.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.models.chexbert_wrapper import get_chexbert_wrapper   # noqa: E402
-from src.utils.io import load_config                            # noqa: E402
+from src.models.chexbert_wrapper import get_chexbert_wrapper
+from src.utils.io import load_config
 
 
 CHEXPERT_LABELS = [
@@ -132,7 +109,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--train_json", required=True, help="Training manifest JSON.")
     ap.add_argument("--K", type=int, default=20, help="Number of clusters.")
-    ap.add_argument("--top_r", type=int, default=9, help="Reports per cluster (M in paper §3.5.1).")
+    ap.add_argument("--top_r", type=int, default=9, help="Reports per cluster.")
     ap.add_argument("--out", required=True)
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--config", default=None, help="Path to a config YAML (provides chexbert.checkpoint, src_path).")
