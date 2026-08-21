@@ -1,16 +1,3 @@
-"""
-DAMEC — LangGraph DAG (paper Fig. 1).
-
-Topology:
-
-    START → bootstrap_prior → study_processor → template_selector
-          → attribute_elicitor → writer ↔ report_validator → END
-
-The writer ↔ report_validator edge implements the closed-loop validation of
-paper §3.5.2: the validator re-invokes the writer (up to
-`validator.max_retries`) whenever any CF-POS disease is missing from the draft.
-"""
-
 from functools import partial
 from typing import Any, Dict
 
