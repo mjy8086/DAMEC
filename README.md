@@ -5,7 +5,7 @@
 This repository contains the official implementation of **DAMEC: Disease-Aware Multi-Expert Consensus Framework for Study-Level Radiology Report Generation**.
 
 > Junyeong Maeng, Eunsong Kang, and Heung-Il Suk, “DAMEC: Disease-Aware Multi-Expert Consensus Framework for Study-Level Radiology Report Generation,” *Proceedings of the 35th ACM International Conference on Information and Knowledge Management (CIKM 2026)*, Rome, Italy, November 7–11, 2026.
-> [[Paper]](https://doi.org/10.1145/XXXXXXXX.XXXXXXXX)
+> [[Paper]](https://doi.org/10.1145/3799682.3841082)
 
 DAMEC formulates radiology report generation as a **study-level, clinical-context generation** task. A variable number of chest X-ray images within a study are analyzed by four heterogeneous experts—**ConvNeXt, RAD-DINO, PriorRG, and MedGemma**—and their disease-level predictions are integrated through a trainable **disease-aware consensus module**.
 
