@@ -1,15 +1,3 @@
-"""
-DAMEC — Single-image base classifier for optional warm-start (paper §3.3.2).
-
-This is a small soft-max-attention fusion of the same per-(expert × disease)
-calibrated logits. It is NOT used by DAMEC inference; we only train it
-separately on the per-image evidence to obtain a calibrated initialization
-(`W_r, W_m, W_x, b_r, b_m, b_x, T, B`) for the consensus module.
-
-Set `base_b_ckpt: null` in the training config to skip the warm-start and
-train the consensus module from scratch instead.
-"""
-
 from __future__ import annotations
 
 import math
@@ -39,7 +27,6 @@ class IntegratorMultiClassifier(nn.Module):
         self.V = view_dim
         self.S = 2 + num_classifiers           # PriorRG + MedGemma + K classifiers
 
-        # per-disease calibration (Eq. 3)
         self.W_r = nn.Parameter(torch.randn(num_diseases, 4) * 0.1)
         self.b_r = nn.Parameter(torch.zeros(num_diseases))
         self.W_m = nn.Parameter(torch.randn(num_diseases, 4) * 0.1)
@@ -60,7 +47,6 @@ class IntegratorMultiClassifier(nn.Module):
             nn.Linear(hidden_dim, self.S),
         )
 
-        # per-disease temperature/bias (Eq. 8)
         self.T = nn.Parameter(torch.ones(num_diseases))
         self.B = nn.Parameter(torch.zeros(num_diseases))
 
