@@ -1,12 +1,3 @@
-"""
-DAMEC — Attribute-Finding Module (paper §3.4).
-
-For every POS disease (except Support Devices and No Finding), this node queries
-MedGemma with all study images and parses
-severity / location / laterality. The resulting α_d is attached to the CF
-descriptor.
-"""
-
 from typing import Any, Dict
 
 from src.utils.io import get_image_path
