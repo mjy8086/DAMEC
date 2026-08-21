@@ -79,7 +79,7 @@ If you find this work useful, please cite:
   author    = {Maeng, Junyeong and Kang, Eunsong and Suk, Heung-Il},
   booktitle = {Proceedings of the 35th ACM International Conference on Information and Knowledge Management},
   year      = {2026},
-  doi       = {10.1145/XXXXXXXX.XXXXXXXX}
+  doi       = {10.1145/3799682.3841082}
 }
 ```
 
