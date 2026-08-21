@@ -1,17 +1,3 @@
-"""
-DAMEC — MedGemma wrapper (paper Tab. 2 — generative · foundation).
-
-Two responsibilities:
-
-  1. Provide the MedGemma generative-expert evidence at inference time. Paper
-     main consumes precomputed per-image outputs (free-form report → CheXbert
-     labels, see `scripts/precompute_experts.py`), so the wrapper only exposes
-     a `get_precomputed(image_id)` lookup.
-
-  2. Run a fresh multi-image attribute-elicitation call inside the
-     Attribute-Finding Module of paper §3.4 via `elicit_attributes`.
-"""
-
 import base64
 import json
 import time
