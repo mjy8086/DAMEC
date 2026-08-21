@@ -1,7 +1,6 @@
 # Installation guide
 
-This document collects every step you need to reproduce the inference and
-training pipelines of DAMEC from a clean machine.
+This document collects every step you need to reproduce the inference and training pipelines of DAMEC from a clean machine.
 
 ## 1. Python environment
 
@@ -15,9 +14,7 @@ Tested on Linux 5.15, CUDA 12.1, PyTorch 2.4, transformers 4.46.
 
 ## 2. Frozen expert checkpoints
 
-DAMEC consults **four heterogeneous experts** plus a **CheXbert labeler** (used
-during training-label extraction and the post-hoc validator). None of these are
-trained by DAMEC; we download the published checkpoints and freeze them.
+DAMEC consults **four heterogeneous experts** plus a **CheXbert labeler** (used during training-label extraction and the post-hoc validator).
 
 | Component | Source | Notes |
 |---|---|---|
@@ -52,15 +49,11 @@ vllm serve google/gemma-4-31b-it \
     --enforce-eager
 ```
 
-The writer endpoint is OpenAI-compatible; `src/llm/factory.py` reads
-`llm.writer.api_base` and `llm.writer.model_name` from your config and sends
-chat completions. To swap in a different OpenAI-compatible model, edit those
-two fields.
+The writer endpoint is OpenAI-compatible; `src/llm/factory.py` reads `llm.writer.api_base` and `llm.writer.model_name` from your config and sends chat completions. To swap in a different OpenAI-compatible model, edit those two fields.
 
 ## 4. Datasets
 
-DAMEC was evaluated on four chest X-ray RRG benchmarks. Each is loaded from a
-**JSON manifest** with the schema below:
+DAMEC was evaluated on four chest X-ray RRG benchmarks. Each is loaded from a **JSON manifest** with the schema below:
 
 ```json
 {
@@ -92,12 +85,12 @@ DAMEC was evaluated on four chest X-ray RRG benchmarks. Each is loaded from a
 
 | Field | Used by | Purpose |
 |---|---|---|
-| `current_study_manifest.images[].view` | study processor + attribute elicitor | one-hot view encoding (paper §3.3.3 Eq. 5); PA > AP > LATERAL ordering |
+| `current_study_manifest.images[].view` | study processor + attribute elicitor | one-hot view encoding; PA > AP > LATERAL ordering |
 | `current_study_manifest.images[].path` | every expert wrapper | resolved against `dataset.image_root` |
-| `current_study_manifest.images[].RRG_output` | writer (paper §3.5.1) | **base draft** the writer minimally edits. Produced offline by the reference RRG model for the dataset: PriorRG on MIMIC-CXR; MLRG on MIMIC-ABN / Two-view CXR; MambaXray-VL on CheXpert Plus |
+| `current_study_manifest.images[].RRG_output` | writer | **base draft** the writer minimally edits. Produced offline by the reference RRG model for the dataset: PriorRG on MIMIC-CXR; MLRG on MIMIC-ABN / Two-view CXR; MambaXray-VL on CheXpert Plus |
 | `current_study_manifest.images[].history`, `indication` | writer prompt | optional clinical context block; safe to leave `null` |
 | `current_study_manifest.target_report` | training-label extraction + NLG eval | study-level reference report. Studies share the same `target_report` across all of their images. |
-| `prior_studies_manifest[].report` | bootstrap-prior node (paper §3.4) | CheXbert-labeled to produce the prior CF, which yields the longitudinal change δ_d. List may be empty; only the first entry is consumed in the current implementation. |
+| `prior_studies_manifest[].report` | bootstrap-prior node | CheXbert-labeled to produce the prior CF, which yields the longitudinal change δ_d. List may be empty; only the first entry is consumed in the current implementation. |
 
 The order of `prior_studies_manifest` is "most recent first". The manifest does
 **not** include raw images — obtain them from each dataset's official source
@@ -105,10 +98,10 @@ and set `dataset.image_root` accordingly.
 
 We use the standard splits:
 
-- **MIMIC-CXR** (Johnson et al.) — official splits, 239998 / 2113 / 3852 images, 150957 / 1182 / 2343 reports.
-- **MIMIC-ABN** (Ni et al.) — abnormal-only subset, splits from PriorRG/MLRG.
-- **Two-view CXR** (Miao et al.) — two-view-only subset, splits from MLRG.
-- **CheXpert Plus** (Chambon et al.) — splits from CXPMRG-Bench.
+- **MIMIC-CXR** (Johnson et al.)
+- **MIMIC-ABN** (Ni et al.)
+- **Two-view CXR** (Miao et al.)
+- **CheXpert Plus** (Chambon et al.)
 
 ## 5. Precomputed evidence cache (optional but recommended)
 
@@ -131,21 +124,12 @@ python scripts/build_template_library.py \
     --out outputs/templates/templates_K20_R9.json
 ```
 
-`K=20`, `top_r=9` is the default used in the paper. Edit
-`template_library.path` in your config to point at the produced JSON.
 
 ## 7. Consensus module training
 
-All training hyper-parameters live in `training/configs/consensus_default.yaml`.
-Edit `precompute_dir`, `classifier_tags`, `seed`, `variant_tag`, and
-(optionally) the architectural fields, then run:
+All training hyper-parameters live in `training/configs/consensus_default.yaml`. Edit `precompute_dir`, `classifier_tags`, `seed`, `variant_tag`, and (optionally) the architectural fields, then run:
 
 ```bash
 cd training
 python train_consensus.py --config configs/consensus_default.yaml
 ```
-
-Trains the consensus module on the cached per-image expert outputs. ≈30–40 min
-on a single NVIDIA RTX A6000. The best checkpoint is saved as
-`<output_dir>/<variant_tag>_seed<seed>/best.pth`; point `consensus.checkpoint`
-in your inference config at this file.
